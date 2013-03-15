@@ -3,6 +3,7 @@
 
 import sys
 import config
+import traceback
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -28,28 +29,39 @@ def main(argv=None): # IGNORE:C0111
         parser = ArgumentParser(description="Meister", formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument('command', help="A command to execute", default="info", nargs="+")
         parser.add_argument('-f', '--file', action='store', default="meister.yml")
+        parser.add_argument('--debug', help="Show debuging information", action='store_true')
 
         # Process arguments
         args = parser.parse_args()
         logger = PrintLogger()
         command = args.command[0]
         file = args.file
-        configuration = config.YamlConfig(file)
+        try:
 
-        commands = { 
-            "provision": { "cmd": lambda: configuration.provision(logger), "help": "Provision the configuration using the drivers provided." },
-            "terminate": { "cmd": lambda: configuration.terminate(logger), "help": "Terminate instances specified by the configuration file." },
-            "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." },
-            "task": { "cmd": lambda: configuration.task(logger, args.command[1], args.command[2]), "help": "Execute a task on a node."},
-            "ssh": { "cmd": lambda: configuration.ssh(logger, args.command[1]), "help": "Open an SSH connection."}
+            configuration = config.YamlConfig(file)
 
-        }
-        if command in commands:
-            commands[command]["cmd"]()
-        else:
-            print "Available commands:\n"
-            for command, info in commands.items():
-                print "{0}: {1}".format(command, info["help"])
+            commands = { 
+                "provision": { "cmd": lambda: configuration.provision(logger), "help": "Provision the configuration using the drivers provided." },
+                "terminate": { "cmd": lambda: configuration.terminate(logger), "help": "Terminate instances specified by the configuration file." },
+                "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." },
+                "task": { "cmd": lambda: configuration.task(logger, args.command[1], args.command[2]), "help": "Execute a task on a node."},
+                "ssh": { "cmd": lambda: configuration.ssh(logger, args.command[1]), "help": "Open an SSH connection."}
+
+                }
+            if command in commands:
+                commands[command]["cmd"]()
+            else:
+                print "Available commands:\n"
+                for command, info in commands.items():
+                    print "{0}: {1}".format(command, info["help"])
+
+        except Exception as e:
+            print "Error: {0}".format(e)
+
+            if args.debug:
+                print "\nDebug info:"
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_tb)
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
