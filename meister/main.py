@@ -3,6 +3,7 @@
 
 import sys
 import config
+import traceback
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -28,6 +29,7 @@ def main(argv=None): # IGNORE:C0111
         parser = ArgumentParser(description="Meister", formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument('command', help="A command to execute", default="info", nargs="+")
         parser.add_argument('-f', '--file', action='store', default="meister.yml")
+        parser.add_argument('--debug', help="Show debuging information", action='store_true')
 
         # Process arguments
         args = parser.parse_args()
@@ -55,6 +57,12 @@ def main(argv=None): # IGNORE:C0111
 
         except Exception as e:
             print "Error: {0}".format(e)
+
+            if args.debug:
+                print "\nDebug info:"
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_tb)
+
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
