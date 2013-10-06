@@ -15,7 +15,7 @@ class Config:
     drivers = {
         "aws": EC2Driver
     }
-    
+
     DNSDrivers = {
         "route53": Route53Driver
     }
@@ -128,7 +128,7 @@ class YamlConfig(Config):
         self.driver.terminate(logger)
         if self.DNSDriver:
             self.DNSDriver.terminate(self.getNodes(), logger)
-            
+
     def info(self, logger):
         logger.logMessage("Compute driver: {0}".format(self.data['driver']['name']))
         if self.DNSDriver:
@@ -136,8 +136,21 @@ class YamlConfig(Config):
         logger.logMessage("\nNodes:\n======\n")
         self.driver.info(logger)
 
+    def loadImports(self, data):
+        """
+        Load all imports and merge with the main configuration file.
+        @todo Fix circular dependencies.
+        """
+        result = data
+
+        if 'imports' in data:
+            for importFile in data['imports']:
+                imported = self.loadImports(yaml.load(open(importFile)))
+                result = dict(result.items() + imported.items())
+        return result
+
     def parse(self):
-        data = yaml.load(open(self.configFile).read())
+        data = self.loadImports(yaml.load(open(self.configFile).read()))
         self.driver = self.drivers[data['driver']['name']](self, data)
         self.DNSDriver = self.DNSDrivers[data['DNS']['name']](self, data)
         self.nodes = {}
